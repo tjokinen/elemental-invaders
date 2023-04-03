@@ -1,0 +1,8 @@
+{
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  },
+  "scripts": {
+    "dev": "./node_modules/.bin/http-server -a localhost -p 8000 -c-1 --cors"
+  }
+}

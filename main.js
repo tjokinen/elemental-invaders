@@ -1,109 +1,23 @@
+import Player from './player.js';
+import Creature from './creature.js';
+import Projectile from './projectile.js';
+
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
-class Player {
-    constructor(x, y, width, height) {
-        this.x = x;
-        this.y = y;
-        this.width = width;
-        this.height = height;
-        this.velocityX = 0;
-        this.speed = 10; // Adjust this value to control the player's speed
-    }
+const weaknesses = {
+    fire: 'water',
+    water: 'earth',
+    earth: 'air',
+    air: 'fire',
+};
 
-    draw() {
-        ctx.fillStyle = 'white';
-        ctx.fillRect(this.x, this.y, this.width, this.height);
-    }
+let activeProjectileType = 'fire';
 
-    move(direction) {
-        if (direction === 'left') {
-            this.velocityX = -this.speed;
-        } else if (direction === 'right') {
-            this.velocityX = this.speed;
-        } else {
-            this.velocityX = 0;
-        }
-    }
-
-    update() {
-        this.x += this.velocityX;
-
-        // Prevent the player from moving off the screen
-        if (this.x < 0) {
-            this.x = 0;
-        } else if (this.x > canvas.width - this.width) {
-            this.x = canvas.width - this.width;
-        }
-    }
-}
-
-class Projectile {
-    constructor(x, y, width, height, type) {
-        this.x = x;
-        this.y = y;
-        this.width = width;
-        this.height = height;
-        this.type = type;
-    }
-
-    draw() {
-        switch (this.type) {
-            case 'fire':
-                ctx.fillStyle = 'red';
-                break;
-            case 'water':
-                ctx.fillStyle = 'blue';
-                break;
-            case 'earth':
-                ctx.fillStyle = 'green';
-                break;
-            case 'air':
-                ctx.fillStyle = 'white';
-                break;
-            default:
-                ctx.fillStyle = 'white';
-        }
-        ctx.fillRect(this.x, this.y, this.width, this.height);
-    }
-
-    update() {
-        this.y -= 5;
-    }
-}
-
-class Creature {
-    constructor(x, y, width, height, type) {
-        this.x = x;
-        this.y = y;
-        this.width = width;
-        this.height = height;
-        this.type = type;
-    }
-
-    draw() {
-        switch (this.type) {
-            case 'fire':
-                ctx.fillStyle = 'red';
-                break;
-            case 'water':
-                ctx.fillStyle = 'blue';
-                break;
-            case 'earth':
-                ctx.fillStyle = 'green';
-                break;
-            case 'air':
-                ctx.fillStyle = 'white';
-                break;
-            default:
-                ctx.fillStyle = 'white';
-        }
-        ctx.fillRect(this.x, this.y, this.width, this.height);
-    }
-
-    update() {
-        this.y += 1;
-    }
+function switchProjectileType() {
+    const types = ['fire', 'water', 'earth', 'air'];
+    const currentIndex = types.indexOf(activeProjectileType);
+    activeProjectileType = types[(currentIndex + 1) % types.length];
 }
 
 const projectiles = [];
@@ -113,17 +27,17 @@ function spawnCreatures() {
     const creatureTypes = ['fire', 'water', 'earth', 'air'];
     const type = creatureTypes[Math.floor(Math.random() * creatureTypes.length)];
     const x = Math.random() * (canvas.width - 30);
-    const creature = new Creature(x, 0, 30, 30, type);
+    const creature = new Creature(x, 0, 30, 30, type, ctx);
     creatures.push(creature);
 }
 
 function shootProjectile(type) {
-    const projectile = new Projectile(player.x + player.width / 2 - 5, player.y, 10, 20, type);
+    const projectile = new Projectile(player.x + player.width / 2 - 5, player.y, 10, 20, type, ctx);
     projectiles.push(projectile);
 }
 
 
-const player = new Player(canvas.width / 2 - 25, canvas.height - 50, 50, 10);
+const player = new Player(canvas.width / 2 - 25, canvas.height - 60, 50, 10, canvas, ctx);
 
 let score = 0;
 const scoreElement = document.createElement('div');
@@ -150,19 +64,19 @@ function gameLoop() {
     projectiles.forEach((projectile, pIndex) => {
         projectile.update();
         projectile.draw();
-
+    
         creatures.forEach((creature, cIndex) => {
-            if (collision(projectile, creature)) {
+            if (collision(projectile, creature) && projectile.type === weaknesses[creature.type]) {
                 // Remove collided projectile and creature
                 projectiles.splice(pIndex, 1);
                 creatures.splice(cIndex, 1);
-
+    
                 // Increase score
                 score += 10;
                 scoreElement.textContent = `Score: ${score}`;
             }
         });
-
+    
         // Remove off-screen projectiles
         if (projectile.y < 0) {
             projectiles.splice(pIndex, 1);
@@ -194,14 +108,22 @@ setInterval(spawnCreatures, 2000);
 // Add touch event listener for shooting projectiles
 canvas.addEventListener('touchend', (e) => {
     e.preventDefault();
-    shootProjectile('fire'); // Replace 'fire' with the active projectile type
+    shootProjectile(activeProjectileType); // Replace 'fire' with the active projectile type
 });
 
 // Add keyboard event listener for shooting projectiles
 document.addEventListener('keydown', (e) => {
     if (e.code === 'Space') {
         e.preventDefault();
-        shootProjectile('fire'); // Replace 'fire' with the active projectile type
+        shootProjectile(activeProjectileType); // Replace 'fire' with the active projectile type
+    }
+});
+
+//keydown event listener to switch the projectile type
+document.addEventListener('keydown', (e) => {
+    if (e.code === 'KeyQ') {
+        e.preventDefault();
+        switchProjectileType();
     }
 });
 
@@ -229,6 +151,11 @@ canvas.addEventListener('touchstart', (e) => {
 canvas.addEventListener('touchmove', (e) => {
     e.preventDefault();
     handleTouchMove(e.touches[0].clientX);
+});
+
+canvas.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    player.move('stop');
 });
 
 function handleTouchMove(touchX) {
