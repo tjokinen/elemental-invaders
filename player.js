@@ -8,6 +8,7 @@ export default class Player {
         this.speed = 10; // Adjust this value to control the player's speed
         this.canvas = canvas;
         this.ctx = ctx;
+        this.health = 3;
     }
 
     draw() {
@@ -34,6 +35,17 @@ export default class Player {
         }
     }
     
+    loseHealth(onZeroHealth) {
+        this.health -= 1;
+        if (this.health <= 0) {
+            this.health = 0;
+            onZeroHealth();
+        }
+    }    
+
+    resetHealth() {
+        this.health = 3;
+    }
 }
 
 window.Player = Player;
