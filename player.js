@@ -9,6 +9,9 @@ export default class Player {
         this.canvas = canvas;
         this.ctx = ctx;
         this.health = 3;
+        this.autoShoot = false;
+        this.autoShootDuration = 5000; // Duration of the automatic shooting in milliseconds
+        this.autoShootInterval = null;
     }
 
     draw() {
@@ -34,17 +37,43 @@ export default class Player {
             this.x = this.canvas.width - this.width;
         }
     }
-    
+
     loseHealth(onZeroHealth) {
         this.health -= 1;
         if (this.health <= 0) {
             this.health = 0;
             onZeroHealth();
         }
-    }    
+    }
 
     resetHealth() {
         this.health = 3;
+    }
+
+    applyAutoShootPowerUp(shootProjectile, getActiveProjectileType) {
+
+        if (this.autoShoot) {
+            return;
+        }
+
+        this.autoShoot = true;
+
+        this.autoShootInterval = setInterval(() => {
+            const activeProjectileType = getActiveProjectileType();
+            shootProjectile(activeProjectileType);
+        }, 50); // Adjust this value to control the shooting speed
+
+        setTimeout(() => {
+            this.autoShoot = false;
+            clearInterval(this.autoShootInterval);
+        }, this.autoShootDuration);
+    }
+
+    applySpeedBoostPowerUp() {
+        this.speed *= 2;
+        setTimeout(() => {
+            this.speed /= 2;
+        }, 5000); // Duration of the speed boost (in milliseconds)
     }
 }
 

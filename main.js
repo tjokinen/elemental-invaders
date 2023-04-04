@@ -2,13 +2,13 @@ import Player from './player.js';
 import Creature from './creature.js';
 import Projectile from './projectile.js';
 import { collision } from './utilities.js';
+import PowerUp from './powerup.js';
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-const player = new Player(canvas.width / 2 - 25, canvas.height - 60, 50, 10, canvas, ctx);
+const player = new Player(canvas.width / 2 - 25, canvas.height - 60, 50, 10, canvas, ctx, shootProjectile);
 let animationId;
 let gameOver = false;
-
 let score = 0;
 
 const weaknesses = {
@@ -28,6 +28,7 @@ function switchProjectileType() {
 
 const projectiles = [];
 const creatures = [];
+const powerUps = [];
 
 function drawPlayAgainButton(x, y, width, height) {
     ctx.fillStyle = 'blue';
@@ -49,6 +50,14 @@ function spawnCreatures() {
     const x = Math.random() * (canvas.width - 30);
     const creature = new Creature(x, 0, 30, 30, type, ctx);
     creatures.push(creature);
+}
+
+function spawnPowerUp() {
+    const powerUpTypes = ['speedBoost', 'autoShoot'];
+    const type = powerUpTypes[Math.floor(Math.random() * powerUpTypes.length)];
+    const x = Math.random() * (canvas.width - 30);
+    const powerUp = new PowerUp(x, 0, 30, 30, type, ctx);
+    powerUps.push(powerUp);
 }
 
 function shootProjectile(type) {
@@ -124,11 +133,33 @@ function gameLoop() {
         // Check if a creature has reached the bottom of the canvas or collided with the player
         if (creature.y + creature.height >= canvas.height || collision(creature, player)) {
             // Remove the creature from the game
-            console.log("remove creature from game")
             creatures.splice(index, 1);
 
             // Reduce player health
             player.loseHealth(endGame);
+        }
+    });
+
+    powerUps.forEach((powerUp, index) => {
+        powerUp.update();
+        powerUp.draw();
+    
+        // Check for collision with player
+        if (collision(powerUp, player)) {
+            powerUps.splice(index, 1);
+      
+            switch (powerUp.type) {
+              case 'speedBoost':
+                player.applySpeedBoostPowerUp();
+                break;
+              case 'autoShoot':
+                player.applyAutoShootPowerUp(shootProjectile, () => activeProjectileType); // Pass the shootProjectile function as an argument
+                break;
+            }
+        }
+        // Remove off-screen power-ups
+        else if (powerUp.y > canvas.height) {
+            powerUps.splice(index, 1);
         }
     });
 
@@ -143,6 +174,8 @@ gameLoop();
 
 // Spawn creatures periodically
 setInterval(spawnCreatures, 2000);
+
+setInterval(spawnPowerUp, 1000); // Spawn power-ups every 10 seconds
 
 // Add touch event listener for shooting projectiles
 canvas.addEventListener('touchend', (e) => {
