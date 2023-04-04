@@ -6,26 +6,43 @@ export default class Projectile {
         this.height = height;
         this.type = type;
         this.ctx = ctx;
+        this.color = 'white';
     }
 
     draw() {
         switch (this.type) {
             case 'fire':
-                this.ctx.fillStyle = 'red';
+                this.color = 'red';
                 break;
             case 'water':
-                this.ctx.fillStyle = 'blue';
+                this.color = 'blue';
                 break;
             case 'earth':
-                this.ctx.fillStyle = 'green';
+                this.color = 'green';
                 break;
             case 'air':
-                this.ctx.fillStyle = 'white';
+                this.color = 'white';
                 break;
             default:
-                this.ctx.fillStyle = 'white';
+                this.color = 'white';
         }
-        this.ctx.fillRect(this.x, this.y, this.width, this.height);
+
+        this.ctx.beginPath();
+        this.ctx.rect(this.x, this.y, this.width, this.height);
+        this.ctx.fillStyle = this.color;
+
+        // Add glow effect
+        this.ctx.shadowColor = this.color;
+        this.ctx.shadowBlur = 10;
+        this.ctx.shadowOffsetX = 0;
+        this.ctx.shadowOffsetY = 0;
+
+        this.ctx.fill();
+        this.ctx.closePath();
+
+        // Reset the shadow properties
+        this.ctx.shadowColor = 'transparent';
+        this.ctx.shadowBlur = 0;
     }
 
     update() {

@@ -12,11 +12,26 @@ export default class Player {
         this.autoShoot = false;
         this.autoShootDuration = 5000; // Duration of the automatic shooting in milliseconds
         this.autoShootInterval = null;
+        this.color = 'white';
     }
 
     draw() {
-        this.ctx.fillStyle = 'white';
-        this.ctx.fillRect(this.x, this.y, this.width, this.height);
+        this.ctx.beginPath();
+        this.ctx.rect(this.x, this.y, this.width, this.height);
+        this.ctx.fillStyle = this.color;
+
+        // Add glow effect
+        this.ctx.shadowColor = this.color;
+        this.ctx.shadowBlur = 10;
+        this.ctx.shadowOffsetX = 0;
+        this.ctx.shadowOffsetY = 0;
+
+        this.ctx.fill();
+        this.ctx.closePath();
+
+        // Reset the shadow properties
+        this.ctx.shadowColor = 'transparent';
+        this.ctx.shadowBlur = 0;
     }
 
     move(direction) {

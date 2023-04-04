@@ -4,21 +4,29 @@ import Projectile from './projectile.js';
 import { collision } from './utilities.js';
 import PowerUp from './powerup.js';
 
+//TODO: Add UI for activeProjectileType and buttons for mobile users
+//add instructions
+//adjust speed/difficulty progressively
+
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const player = new Player(canvas.width / 2 - 25, canvas.height - 60, 50, 10, canvas, ctx, shootProjectile);
 let animationId;
 let gameOver = false;
 let score = 0;
-
 const weaknesses = {
     fire: 'water',
     water: 'earth',
     earth: 'air',
     air: 'fire',
 };
-
 let activeProjectileType = 'fire';
+
+const projectiles = [];
+const creatures = [];
+const powerUps = [];
+let powerUpMessage = '';
+let powerUpMessageTimeout;
 
 function switchProjectileType() {
     const types = ['fire', 'water', 'earth', 'air'];
@@ -26,9 +34,24 @@ function switchProjectileType() {
     activeProjectileType = types[(currentIndex + 1) % types.length];
 }
 
-const projectiles = [];
-const creatures = [];
-const powerUps = [];
+
+function showPowerUpMessage(message) {
+  clearTimeout(powerUpMessageTimeout); // Clear any previous timeout
+  powerUpMessage = message;
+  powerUpMessageTimeout = setTimeout(() => {
+    powerUpMessage = ''; // Clear the message after the timeout
+  }, 2000); // Adjust this value to control how long the message is displayed
+}
+
+function drawPowerUpMessage() {
+  if (powerUpMessage) {
+    ctx.fillStyle = 'white';
+    ctx.font = '24px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(powerUpMessage, canvas.width / 2, 100);
+  }
+}
+
 
 function drawPlayAgainButton(x, y, width, height) {
     ctx.fillStyle = 'blue';
@@ -151,9 +174,11 @@ function gameLoop() {
             switch (powerUp.type) {
               case 'speedBoost':
                 player.applySpeedBoostPowerUp();
+                showPowerUpMessage('Speed Boost!'); // Display the message
                 break;
               case 'autoShoot':
                 player.applyAutoShootPowerUp(shootProjectile, () => activeProjectileType); // Pass the shootProjectile function as an argument
+                showPowerUpMessage('Auto Shoot!'); // Display the message
                 break;
             }
         }
@@ -166,6 +191,7 @@ function gameLoop() {
     player.update();
     player.draw();
     drawStatus();
+    drawPowerUpMessage(); // Draw the power-up message on the canvas
 
     animationId = requestAnimationFrame(gameLoop);
 }
@@ -175,7 +201,7 @@ gameLoop();
 // Spawn creatures periodically
 setInterval(spawnCreatures, 2000);
 
-setInterval(spawnPowerUp, 1000); // Spawn power-ups every 10 seconds
+setInterval(spawnPowerUp, 10000); // Spawn power-ups every 10 seconds
 
 // Add touch event listener for shooting projectiles
 canvas.addEventListener('touchend', (e) => {
@@ -228,6 +254,7 @@ canvas.addEventListener('click', (e) => {
         gameOver = false;
         creatures.length = 0;
         projectiles.length = 0;
+        powerUps.length = 0;
 
         // Restart the game loop
         gameLoop();
