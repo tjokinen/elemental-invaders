@@ -20,6 +20,13 @@ export default class Player {
         this.currentPowerUpIndex = 0;
     }
 
+    setPositionAndSize(x, y, width, height) {
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.height = height;
+    }
+
     draw() {
         this.ctx.beginPath();
         this.ctx.rect(this.x, this.y, this.width, this.height);

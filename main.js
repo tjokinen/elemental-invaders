@@ -6,11 +6,30 @@ import PowerUp from './powerup.js';
 import { drawPowerUpDurationBar } from './ui.js';
 import StartupScreen from './startupScreen.js';
 
-//adjust speed/difficulty progressively
-
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-const player = new Player(canvas.width / 2 - 25, canvas.height * 0.9, 50, 10, canvas, ctx, shootProjectile);
+
+function setCanvasSize() {
+    if (window.innerHeight >= window.innerWidth * 0.75) {
+        if (window.innerWidth >= 820) {
+            canvas.width = 800;
+        } else {
+            canvas.width = window.innerWidth - 20;
+        }
+        canvas.height = canvas.width * 0.75;
+    } else {
+        if (window.innerHeight >= 620) {
+            canvas.height = 600;
+        } else {
+            canvas.height = window.innerHeight - 20;
+        }
+        canvas.width = canvas.height / 0.75;
+    }
+}
+
+setCanvasSize();
+
+const player = new Player(canvas.width / 2 - 25, canvas.height * 0.9, canvas.width * 0.0625, canvas.width * 0.0125, canvas, ctx, shootProjectile);
 let animationId;
 let gameOver = false;
 let score = 0;
@@ -27,21 +46,6 @@ const creatures = [];
 const powerUps = [];
 let powerUpMessage = '';
 let powerUpMessageTimeout;
-
-function setCanvasSize() {
-    if (window.innerWidth - 100 > 800) {
-        canvas.width = 800;
-    } else {
-        canvas.width = window.innerWidth - 100;
-    }
-    if (window.innerHeight - 100 > 600) {
-        canvas.height = 600;
-    } else {
-        canvas.height = window.innerHeight - 100;
-    }
-}
-
-setCanvasSize();
 
 const startupScreen = new StartupScreen(canvas, ctx);
 
@@ -348,7 +352,7 @@ function processClickOrTouch(x, y) {
 // Add keyboard event listener for shooting projectiles
 document.addEventListener('keydown', (e) => {
     if (e.code === 'Space') {
-        if (e.repeat) {return}
+        if (e.repeat) { return }
         e.preventDefault();
         shootProjectile(activeProjectileType); // Replace 'fire' with the active projectile type
     }
@@ -412,6 +416,14 @@ function handleTouchMove(touchX) {
         player.move('right');
     }
 }
+
+window.addEventListener('resize', () => {
+    setCanvasSize();
+    player.setPositionAndSize(canvas.width / 2 - 25, canvas.height * 0.9, canvas.width * 0.0625, canvas.width * 0.0125);
+    if (!gameStarted && !gameOver) {
+        startupScreen.draw();
+    }
+});
 
 
 // Draw the startup screen
