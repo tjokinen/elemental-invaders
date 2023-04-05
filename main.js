@@ -29,8 +29,16 @@ let powerUpMessage = '';
 let powerUpMessageTimeout;
 
 function setCanvasSize() {
-    canvas.width = window.innerWidth - 100;
-    canvas.height = window.innerHeight - 100;
+    if (window.innerWidth - 100 > 800) {
+        canvas.width = 800;
+    } else {
+        canvas.width = window.innerWidth - 100;
+    }
+    if (window.innerHeight - 100 > 600) {
+        canvas.height = 600;
+    } else {
+        canvas.height = window.innerHeight - 100;
+    }
 }
 
 setCanvasSize();
