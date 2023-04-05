@@ -5,6 +5,7 @@ import { collision } from './utilities.js';
 import PowerUp from './powerup.js';
 import { drawPowerUpDurationBar } from './ui.js';
 import StartupScreen from './startupScreen.js';
+import Particle from './particle.js';
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
@@ -46,6 +47,7 @@ const creatures = [];
 const powerUps = [];
 let powerUpMessage = '';
 let powerUpMessageTimeout;
+const particles = [];
 
 const startupScreen = new StartupScreen(canvas, ctx);
 
@@ -197,12 +199,27 @@ function gameLoop() {
         return;
     }
 
+    particles.forEach((particle, index) => {
+        particle.update();
+        particle.draw();
+    
+        if (particle.alpha <= 0) {
+            particles.splice(index, 1);
+        }
+    });
+
     projectiles.forEach((projectile, pIndex) => {
         projectile.update();
         projectile.draw();
 
         creatures.forEach((creature, cIndex) => {
             if (collision(projectile, creature) && projectile.type === weaknesses[creature.type]) {
+
+                // Generate particles
+                for (let i = 0; i < 10; i++) {
+                    particles.push(new Particle(creature.x, creature.y, 3, creature.color, ctx));
+                }
+
                 // Remove collided projectile and creature
                 projectiles.splice(pIndex, 1);
                 creatures.splice(cIndex, 1);
