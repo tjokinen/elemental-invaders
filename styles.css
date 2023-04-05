@@ -10,3 +10,11 @@ body {
 canvas {
     border: 2px solid #fff;
 }
+
+@font-face {
+    font-family: 'Orbitron';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url(https://fonts.gstatic.com/s/orbitron/v29/yMJMMIlzdpvBhQQL_SC3X9yhF25-T1nyKS6BoWgzfDAlp7lk.woff2) format('woff2');
+}

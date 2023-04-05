@@ -179,7 +179,7 @@ function endGame() {
 
     // Display the "Game Over" text
     ctx.fillStyle = 'red';
-    ctx.font = '48px Arial';
+    ctx.font = '48px Orbitron';
     ctx.textAlign = 'center';
     ctx.fillText('Game Over', canvas.width / 2, canvas.height / 2);
 
