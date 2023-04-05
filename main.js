@@ -3,14 +3,14 @@ import Creature from './creature.js';
 import Projectile from './projectile.js';
 import { collision } from './utilities.js';
 import PowerUp from './powerup.js';
+import { drawPowerUpDurationBar } from './ui.js';
+import StartupScreen from './startupScreen.js';
 
-//TODO: Add UI for activeProjectileType and buttons for mobile users
-//add instructions
 //adjust speed/difficulty progressively
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-const player = new Player(canvas.width / 2 - 25, canvas.height - 60, 50, 10, canvas, ctx, shootProjectile);
+const player = new Player(canvas.width / 2 - 25, canvas.height * 0.9, 50, 10, canvas, ctx, shootProjectile);
 let animationId;
 let gameOver = false;
 let score = 0;
@@ -28,6 +28,19 @@ const powerUps = [];
 let powerUpMessage = '';
 let powerUpMessageTimeout;
 
+function setCanvasSize() {
+    canvas.width = window.innerWidth - 100;
+    canvas.height = window.innerHeight - 100;
+}
+
+setCanvasSize();
+
+const startupScreen = new StartupScreen(canvas, ctx);
+
+// Flag to check if the game has started
+let gameStarted = false;
+
+
 function switchProjectileType() {
     const types = ['fire', 'water', 'earth', 'air'];
     const currentIndex = types.indexOf(activeProjectileType);
@@ -36,20 +49,20 @@ function switchProjectileType() {
 
 
 function showPowerUpMessage(message) {
-  clearTimeout(powerUpMessageTimeout); // Clear any previous timeout
-  powerUpMessage = message;
-  powerUpMessageTimeout = setTimeout(() => {
-    powerUpMessage = ''; // Clear the message after the timeout
-  }, 2000); // Adjust this value to control how long the message is displayed
+    clearTimeout(powerUpMessageTimeout); // Clear any previous timeout
+    powerUpMessage = message;
+    powerUpMessageTimeout = setTimeout(() => {
+        powerUpMessage = ''; // Clear the message after the timeout
+    }, 2000); // Adjust this value to control how long the message is displayed
 }
 
 function drawPowerUpMessage() {
-  if (powerUpMessage) {
-    ctx.fillStyle = 'white';
-    ctx.font = '24px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText(powerUpMessage, canvas.width / 2, 100);
-  }
+    if (powerUpMessage) {
+        ctx.fillStyle = 'white';
+        ctx.font = '24px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(powerUpMessage, canvas.width / 2, 100);
+    }
 }
 
 
@@ -65,6 +78,37 @@ function drawPlayAgainButton(x, y, width, height) {
     ctx.textAlign = 'center';
     ctx.fillText('Play again', x + width / 2, y + height * 0.7);
 }
+
+function drawChangeProjectileButton() {
+    const buttonWidth = 150;
+    const buttonHeight = 40;
+    const buttonX = 10;
+    const buttonY = canvas.height - buttonHeight - 10;
+
+    switch (activeProjectileType) {
+        case 'fire':
+            ctx.fillStyle = 'red';
+            break;
+        case 'water':
+            ctx.fillStyle = 'blue';
+            break;
+        case 'earth':
+            ctx.fillStyle = 'green';
+            break;
+        case 'air':
+            ctx.fillStyle = 'white';
+            break;
+        default:
+            ctx.fillStyle = 'red';
+    }
+    ctx.fillRect(buttonX, buttonY, buttonWidth, buttonHeight);
+
+    ctx.fillStyle = 'black';
+    ctx.font = '20px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('Change Type', buttonX + buttonWidth / 2, buttonY + buttonHeight * 0.65);
+}
+
 
 
 function spawnCreatures() {
@@ -88,13 +132,31 @@ function shootProjectile(type) {
     projectiles.push(projectile);
 }
 
+function drawHeart(x, y, size) {
+    ctx.beginPath();
+    ctx.moveTo(x + size / 2, y + size / 4);
+    ctx.arc(x + size / 4, y + size / 4, size / 4, 0, Math.PI, true);
+    ctx.lineTo(x + size / 2, y + size * 0.75);
+    ctx.lineTo(x + size, y + size / 4);
+    ctx.arc(x + size * 0.75, y + size / 4, size / 4, 0, Math.PI, true);
+    ctx.closePath();
+    ctx.fillStyle = 'red';
+    ctx.fill();
+}
+
 function drawStatus() {
+    // Draw hearts for health
+    for (let i = 0; i < player.health; i++) {
+        drawHeart(10 + i * 30, 10, 25);
+    }
+
+    // Draw the score
     ctx.fillStyle = 'white';
     ctx.font = '24px Arial';
     ctx.textAlign = 'left';
-    ctx.fillText(`Health: ${player.health}`, 10, 30);
     ctx.fillText(`Score:  ${score}`, 10, 60);
 }
+
 
 function endGame() {
     // Clear the game loop
@@ -116,6 +178,7 @@ function endGame() {
 
 
 function gameLoop() {
+
     if (!gameOver) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
     } else {
@@ -166,21 +229,22 @@ function gameLoop() {
     powerUps.forEach((powerUp, index) => {
         powerUp.update();
         powerUp.draw();
-    
+
         // Check for collision with player
         if (collision(powerUp, player)) {
             powerUps.splice(index, 1);
-      
+
             switch (powerUp.type) {
-              case 'speedBoost':
-                player.applySpeedBoostPowerUp();
-                showPowerUpMessage('Speed Boost!'); // Display the message
-                break;
-              case 'autoShoot':
-                player.applyAutoShootPowerUp(shootProjectile, () => activeProjectileType); // Pass the shootProjectile function as an argument
-                showPowerUpMessage('Auto Shoot!'); // Display the message
-                break;
+                case 'speedBoost':
+                    player.applySpeedBoostPowerUp();
+                    showPowerUpMessage('Speed Boost!'); // Display the message
+                    break;
+                case 'autoShoot':
+                    player.applyAutoShootPowerUp(shootProjectile, () => activeProjectileType); // Pass the shootProjectile function as an argument
+                    showPowerUpMessage('Auto Shoot!'); // Display the message
+                    break;
             }
+
         }
         // Remove off-screen power-ups
         else if (powerUp.y > canvas.height) {
@@ -190,28 +254,93 @@ function gameLoop() {
 
     player.update();
     player.draw();
+    drawPowerUpDurationBar(ctx, canvas, player.getPowerUpDuration());
     drawStatus();
     drawPowerUpMessage(); // Draw the power-up message on the canvas
+    drawChangeProjectileButton();
 
     animationId = requestAnimationFrame(gameLoop);
 }
 
-gameLoop();
+function startGame() {
 
-// Spawn creatures periodically
-setInterval(spawnCreatures, 2000);
+    if (gameStarted) {
+        return;
+    }
 
-setInterval(spawnPowerUp, 10000); // Spawn power-ups every 10 seconds
+    gameStarted = true;
 
-// Add touch event listener for shooting projectiles
-canvas.addEventListener('touchend', (e) => {
-    e.preventDefault();
-    shootProjectile(activeProjectileType); // Replace 'fire' with the active projectile type
-});
+    // Spawn creatures periodically
+    setInterval(spawnCreatures, 2000);
+
+    // Spawn power-ups every 10 seconds
+    setInterval(spawnPowerUp, 10000);
+
+    // Start the game loop
+    gameLoop();
+}
+
+canvas.addEventListener('click', handleCanvasClick);
+function handleCanvasClick(e) {
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    processClickOrTouch(x, y);
+}
+
+function processClickOrTouch(x, y) {
+    // Play again button
+    if (gameOver && x >= canvas.width / 2 - 75 && x <= canvas.width / 2 + 75 && y >= canvas.height / 2 + 50 && y <= canvas.height / 2 + 100) {
+        // Reset the game variables
+        player.resetHealth();
+        score = 0;
+        gameOver = false;
+        creatures.length = 0;
+        projectiles.length = 0;
+        powerUps.length = 0;
+
+        // Restart the game loop
+        gameLoop();
+    }
+
+    // Start game button
+    if (!gameStarted) {
+        const buttonWidth = 200;
+        const buttonHeight = 50;
+        const buttonX = (canvas.width - buttonWidth) / 2;
+        const buttonY = canvas.height * 0.5;
+
+        if (
+            x >= buttonX && x <= buttonX + buttonWidth &&
+            y >= buttonY && y <= buttonY + buttonHeight
+        ) {
+            startGame();
+        }
+    }
+
+    // Shoot projectile when the game is running
+    if (gameStarted && !gameOver) {
+        shootProjectile(activeProjectileType);
+
+        // Change projectile button
+        const buttonWidth = 150;
+        const buttonHeight = 40;
+        const buttonX = 10;
+        const buttonY = canvas.height - buttonHeight - 10;
+
+        if (
+            x >= buttonX && x <= buttonX + buttonWidth &&
+            y >= buttonY && y <= buttonY + buttonHeight
+        ) {
+            switchProjectileType();
+        }
+    }
+}
 
 // Add keyboard event listener for shooting projectiles
 document.addEventListener('keydown', (e) => {
     if (e.code === 'Space') {
+        if (e.repeat) {return}
         e.preventDefault();
         shootProjectile(activeProjectileType); // Replace 'fire' with the active projectile type
     }
@@ -240,29 +369,18 @@ document.addEventListener('keyup', (e) => {
     }
 });
 
-//Play again button click listener
-canvas.addEventListener('click', (e) => {
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    // Check if the click is within the "Play again" button area
-    if (gameOver && x >= canvas.width / 2 - 75 && x <= canvas.width / 2 + 75 && y >= canvas.height / 2 + 50 && y <= canvas.height / 2 + 100) {
-        // Reset the game variables
-        player.resetHealth();
-        score = 0;
-        gameOver = false;
-        creatures.length = 0;
-        projectiles.length = 0;
-        powerUps.length = 0;
-
-        // Restart the game loop
-        gameLoop();
-    }
-});
-
 
 // Touch event listeners for mobile devices
+
+canvas.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    const rect = canvas.getBoundingClientRect();
+    const touch = e.changedTouches[0];
+    const x = touch.clientX - rect.left;
+    const y = touch.clientY - rect.top;
+    processClickOrTouch(x, y);
+});
+
 canvas.addEventListener('touchstart', (e) => {
     e.preventDefault();
     handleTouchMove(e.touches[0].clientX);
@@ -286,3 +404,7 @@ function handleTouchMove(touchX) {
         player.move('right');
     }
 }
+
+
+// Draw the startup screen
+startupScreen.draw();

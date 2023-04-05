@@ -10,13 +10,17 @@ export default class PowerUp {
     }
 
     draw() {
+
         this.ctx.beginPath();
-        this.ctx.rect(this.x, this.y, this.width, this.height);
+        this.ctx.moveTo(this.x, this.y + this.height);
+        this.ctx.lineTo(this.x + this.width / 2, this.y);
+        this.ctx.lineTo(this.x + this.width, this.y + this.height);
+        this.ctx.lineTo(this.x, this.y + this.height);
         this.ctx.fillStyle = this.color;
 
         // Add glow effect
         this.ctx.shadowColor = this.color;
-        this.ctx.shadowBlur = 10;
+        this.ctx.shadowBlur = 50 * (this.y / 600);
         this.ctx.shadowOffsetX = 0;
         this.ctx.shadowOffsetY = 0;
 

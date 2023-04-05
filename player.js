@@ -5,14 +5,19 @@ export default class Player {
         this.width = width;
         this.height = height;
         this.velocityX = 0;
-        this.speed = 10; // Adjust this value to control the player's speed
+        this.baseSpeed = 10;
+        this.speed = 5; // Adjust this value to control the player's speed
         this.canvas = canvas;
         this.ctx = ctx;
         this.health = 3;
         this.autoShoot = false;
         this.autoShootDuration = 5000; // Duration of the automatic shooting in milliseconds
         this.autoShootInterval = null;
+        this.speedBoostInterval = null;
         this.color = 'white';
+        this.powerUpDuration = 0;
+        this.autoShootSpeed = 50; // Adjust this value to control the shooting speed
+        this.currentPowerUpIndex = 0;
     }
 
     draw() {
@@ -67,28 +72,62 @@ export default class Player {
 
     applyAutoShootPowerUp(shootProjectile, getActiveProjectileType) {
 
-        if (this.autoShoot) {
-            return;
+        this.powerUpIndex = ++this.currentPowerUpIndex;
+
+        if (this.powerUpDuration > 0) {
+            this.autoShoot = false;
+            this.powerUpDuration = 0;
+            clearInterval(this.autoShootInterval);
+            clearInterval(this.speedBoostInterval);
         }
 
+        this.powerUpDuration = 100;
         this.autoShoot = true;
 
         this.autoShootInterval = setInterval(() => {
             const activeProjectileType = getActiveProjectileType();
             shootProjectile(activeProjectileType);
-        }, 50); // Adjust this value to control the shooting speed
+            this.powerUpDuration -= this.autoShootSpeed * 100 / this.autoShootDuration; // Reduce the power-up duration
+        }, this.autoShootSpeed);
 
         setTimeout(() => {
-            this.autoShoot = false;
-            clearInterval(this.autoShootInterval);
+            if (this.powerUpIndex === this.currentPowerUpIndex) {
+                this.autoShoot = false;
+                this.powerUpDuration = 0;
+                clearInterval(this.autoShootInterval);
+            }
         }, this.autoShootDuration);
     }
 
     applySpeedBoostPowerUp() {
-        this.speed *= 2;
+
+        this.powerUpIndex = ++this.currentPowerUpIndex;
+
+        if (this.powerUpDuration > 0) {
+            this.autoShoot = false;
+            this.powerUpDuration = 0;
+            clearInterval(this.autoShootInterval);
+            clearInterval(this.speedBoostInterval);
+        }
+
+        this.powerUpDuration = 100;
+        this.speed = this.baseSpeed * 2;
+
+        this.speedBoostInterval = setInterval(() => {
+            this.powerUpDuration -= 1;
+        }, 50)
+
         setTimeout(() => {
-            this.speed /= 2;
+            if (this.powerUpIndex === this.currentPowerUpIndex) {
+                this.speed = this.baseSpeed;
+                this.powerUpDuration = 0;
+                clearInterval(this.speedBoostInterval);
+            }
         }, 5000); // Duration of the speed boost (in milliseconds)
+    }
+
+    getPowerUpDuration() {
+        return this.powerUpDuration;
     }
 }
 
